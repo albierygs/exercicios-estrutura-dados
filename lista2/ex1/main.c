@@ -1,4 +1,4 @@
-/* Modifique as rotinas de Lista Encadeada para que essa atenda as definições de uma lista circular simplesmente encadeada. Desenvolva uma aplicação para testar as novas rotinas. */
+/* Modifique as rotinas de Lista Encadeada para que essa atenda as definiï¿½ï¿½es de uma lista circular simplesmente encadeada. Desenvolva uma aplicaï¿½ï¿½o para testar as novas rotinas. */
 
 
 #include <stdio.h>
@@ -47,7 +47,7 @@ main() {
             case 3:
                 break;
             default:
-                printf("Opção inválida\n");
+                printf("Opï¿½ï¿½o invï¿½lida\n");
                 break;
         }
     } while (option != 3);
@@ -55,7 +55,7 @@ main() {
 
 
 int menu() {
-    printf("Escolha a opção:\n");
+    printf("Escolha a opï¿½ï¿½o:\n");
     printf("1 - INSERIR\n2 - LISTAR\n3 - SAIR\n");
     int number; 
     scanf("%d", &number);
@@ -69,7 +69,7 @@ List *startList()
 
     if (head == NULL)
     {
-        printf("\nMémoria insuficiente\n");
+        printf("\nMï¿½moria insuficiente\n");
         exit(1);
     }
     head->begin = NULL;
@@ -84,7 +84,7 @@ Nodo *getNewNodo()
 
     if (nodo == NULL)
     {
-        printf("\nMémoria insuficiente\n");
+        printf("\nMï¿½moria insuficiente\n");
         exit(1);
     }
     return nodo;
@@ -127,7 +127,7 @@ void insert(int number, List *list)
 int readNumber()
 {
     int number;
-    printf("Informe o número: ");
+    printf("Informe o nÃºmero: ");
     scanf("%d", &number);
     fflush(stdin);
     return number;
