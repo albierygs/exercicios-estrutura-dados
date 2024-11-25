@@ -4,11 +4,14 @@
 #include <stdlib.h>
 #include <locale.h>
 #include <string.h>
+#include <conio.h>
+
+#define TAM 31
 
 
 typedef struct nodo
 {
-  char texto[30];
+  char texto[TAM];
   int posicao;
   struct nodo *proximo;
   struct nodo *anterior;
@@ -22,9 +25,12 @@ typedef struct lista
 
 Lista *iniciarLista();
 void inserir(char [], int, Lista *);
+void editar(Lista *);
 Nodo *iniciarNodo(char [], int);
-void mostrar(Lista *);
+void mostrar(Lista *, Nodo *, int);
 void atualizarPosicoes(Lista *);
+int acharUltimoCaracter(Nodo *);
+void moverCursor(Nodo **, int *, char);
 
 
 main() {
@@ -41,7 +47,7 @@ main() {
   inserir(b, 0, lista);
   inserir(c, 1, lista);
 
-  mostrar(lista);
+  editar(lista);
 
   system("pause");
 }
@@ -70,17 +76,27 @@ Nodo *iniciarNodo(char texto[], int posicao) {
   return nodo;
 }
 
-void mostrar(Lista *lista) {
+void mostrar(Lista *lista, Nodo *nodoEditor, int posicaoEditor) {
   Nodo *aux = lista->comeco;
 
   while (aux != NULL) {
-    printf("%s", aux->texto);
+    if (nodoEditor == NULL || aux != nodoEditor) {
+      printf("%s", aux->texto);
+    } else {
+      for (int i = 0; i < acharUltimoCaracter(aux) + 1; i++) {
+        if (i == posicaoEditor)
+        {
+          printf("%c|", aux->texto[i]);
+        } else {
+          printf("%c", aux->texto[i]);
+        }
+      }
+    }
     aux = aux->proximo;
   }
 }
 
 void inserir(char texto[], int posicao, Lista *lista) {
-  printf("\nInserindo %s", texto);
   Nodo *nodo = iniciarNodo(texto, posicao);
 
   if (lista->comeco == NULL) { // inserção do primeiro
@@ -131,4 +147,85 @@ void atualizarPosicoes(Lista *lista) {
     aux->posicao = aux->anterior->posicao + 1;
     aux = aux->proximo;
   }
+}
+
+int acharUltimoCaracter(Nodo *nodo) {  
+  for (int i = 0; i < TAM; i++) {
+    if (nodo->texto[i] == '\n') {
+      return i - 1;
+    }
+  }
+  return -1;
+}
+
+void moverCursor(Nodo **nodo, int *posicao, char tipo) {
+  if (tipo == 'e') {
+    if (!(*posicao == 0 && (*nodo)->anterior == NULL)) {
+      if (*posicao == 0) {
+        *nodo = (*nodo)->anterior;
+        *posicao = acharUltimoCaracter(*nodo);
+      } else {
+        (*posicao)--;
+      }
+    }
+  } else if (tipo == 'd') {
+    int ultimoCaracter = acharUltimoCaracter(*nodo);
+
+    if (!(*posicao == ultimoCaracter && (*nodo)->proximo == NULL)) {
+      if (*posicao == ultimoCaracter) {
+        *nodo = (*nodo)->proximo;
+        *posicao = 0;
+      } else {
+        (*posicao)++;
+      }
+    }
+  } else if (tipo == 'c') {
+    if (!((*nodo)->anterior == NULL)) {
+      *nodo = (*nodo)->anterior;
+      *posicao = acharUltimoCaracter(*nodo);
+    } else {
+      *posicao = 0;
+    }
+  } else if (tipo == 'b') {
+    if (!((*nodo)->proximo == NULL)) {
+      *nodo = (*nodo)->proximo;
+    }
+    *posicao = acharUltimoCaracter(*nodo);
+  }
+}
+
+void editar(Lista *lista) {
+  Nodo *aux = lista->fim;
+  int posicao = acharUltimoCaracter(aux);
+
+  while (1) {
+    system("cls");
+    mostrar(lista, aux, posicao);
+
+    int tecla = getch();
+        
+    if (tecla == 0 || tecla == 224) {
+      tecla = getch();
+
+      if (tecla == 72) { // tecla pra cima
+        moverCursor(&aux, &posicao, 'c');
+      } else if (tecla == 80) { // tecla pra baixo
+        moverCursor(&aux, &posicao, 'b');
+      } else if (tecla == 75) { // tecla pra esquerda
+        moverCursor(&aux, &posicao, 'e');
+      } else if (tecla == 77) { // tecla pra direita
+        moverCursor(&aux, &posicao, 'd');
+      }
+
+    } else if (tecla == 8) { //tecla backspace
+      printf("Backspace");
+    } else if (tecla == 13) { // tecla enter
+      printf("Enter");
+    } else if (tecla == 27) {
+      return;
+    } else {
+      printf("%c - %d", tecla, tecla);
+    }
+  }
+  system("cls");
 }
