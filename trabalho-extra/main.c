@@ -1,231 +1,187 @@
-// editor de texto cada linha com 30 caracteres
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <locale.h>
 #include <string.h>
-#include <conio.h>
 
-#define TAM 31
+#define TAMANHO_LINHA 30
 
+// Definição do nó para lista duplamente encadeada
+typedef struct No {
+    char conteudo[TAMANHO_LINHA];    // Conteúdo da linha
+    struct No* anterior;              // Ponteiro para nó anterior
+    struct No* proximo;               // Ponteiro para próximo nó
+} No;
 
-typedef struct nodo
-{
-  char texto[TAM];
-  int posicao;
-  struct nodo *proximo;
-  struct nodo *anterior;
-} Nodo;
+// Estrutura para representar o editor
+typedef struct {
+    No* cabeca;      // Primeiro nó do documento
+    No* atual;       // Linha atual
+} EditorTexto;
 
-typedef struct lista
-{
-  Nodo *comeco;
-  Nodo *fim;
-} Lista;
+// Protótipos das funções
+EditorTexto* criarEditor();
+void inserirLinha(EditorTexto* editor, const char* texto);
+void deletarLinha(EditorTexto* editor);
+void editarLinha(EditorTexto* editor, const char* novoTexto);
+void imprimirDocumento(EditorTexto* editor);
+void liberarEditor(EditorTexto* editor);
+void moverCima(EditorTexto* editor);
+void moverBaixo(EditorTexto* editor);
 
-Lista *iniciarLista();
-void inserir(char [], int, Lista *);
-void editar(Lista *);
-Nodo *iniciarNodo(char [], int);
-void mostrar(Lista *, Nodo *, int);
-void atualizarPosicoes(Lista *);
-int acharUltimoCaracter(Nodo *);
-void moverCursor(Nodo **, int *, char);
-
-
-main() {
-  setlocale(LC_ALL, "Portuguese");
-
-  Lista *lista = iniciarLista();
-
-  char a[30], b[30], c[30];
-  fgets(a, sizeof(a), stdin);
-  fgets(b, sizeof(b), stdin);
-  fgets(c, sizeof(c), stdin);
-
-  inserir(a, 0, lista);
-  inserir(b, 0, lista);
-  inserir(c, 1, lista);
-
-  editar(lista);
-
-  system("pause");
+// Criar um novo editor
+EditorTexto* criarEditor() {
+    EditorTexto* editor = (EditorTexto*)malloc(sizeof(EditorTexto));
+    editor->cabeca = NULL;
+    editor->atual = NULL;
+    return editor;
 }
 
+// Inserir linha no final do documento
+void inserirLinha(EditorTexto* editor, const char* texto) {
+    No* novoNo = (No*)malloc(sizeof(No));
+    strncpy(novoNo->conteudo, texto, TAMANHO_LINHA - 1);
+    novoNo->conteudo[TAMANHO_LINHA - 1] = '\0';  // Garantir terminação
+    novoNo->proximo = NULL;
+    novoNo->anterior = NULL;
 
-
-Lista *iniciarLista() {
-  Lista *lista = (Lista *) malloc(sizeof(Lista));
-  if (lista == NULL) {
-    printf("\nMémoria insuficiente para criar a lista\n");
-    exit(1);
-  }
-  lista->comeco = NULL;
-  lista->fim = NULL;
-  return lista;
-}
-
-Nodo *iniciarNodo(char texto[], int posicao) {
-  Nodo *nodo = (Nodo *) malloc(sizeof(Nodo));
-  if (nodo == NULL) {
-    printf("\nMémoria insuficiente para criar o nodo\n");
-    exit(1);
-  }
-  strcpy(nodo->texto, texto);
-  nodo->posicao = posicao;
-  return nodo;
-}
-
-void mostrar(Lista *lista, Nodo *nodoEditor, int posicaoEditor) {
-  Nodo *aux = lista->comeco;
-
-  while (aux != NULL) {
-    if (nodoEditor == NULL || aux != nodoEditor) {
-      printf("%s", aux->texto);
+    if (editor->cabeca == NULL) {
+        // Primeiro nó do documento
+        editor->cabeca = novoNo;
+        editor->atual = novoNo;
     } else {
-      for (int i = 0; i < acharUltimoCaracter(aux) + 1; i++) {
-        if (i == posicaoEditor)
-        {
-          printf("%c|", aux->texto[i]);
-        } else {
-          printf("%c", aux->texto[i]);
+        // Encontrar último nó
+        No* ultimo = editor->cabeca;
+        while (ultimo->proximo != NULL) {
+            ultimo = ultimo->proximo;
         }
-      }
+
+        // Inserir no final
+        ultimo->proximo = novoNo;
+        novoNo->anterior = ultimo;
     }
-    aux = aux->proximo;
-  }
 }
 
-void inserir(char texto[], int posicao, Lista *lista) {
-  Nodo *nodo = iniciarNodo(texto, posicao);
+// Deletar linha atual
+void deletarLinha(EditorTexto* editor) {
+    if (editor->atual == NULL) return;
 
-  if (lista->comeco == NULL) { // inserção do primeiro
-    lista->comeco = nodo;
-    lista->fim = nodo;
-    nodo->anterior = NULL;
-    nodo->proximo = NULL;
-  } else if (posicao == 0) { // inserção na primeira posição
-    nodo->proximo = lista->comeco;
-    lista->comeco->anterior = nodo;
-    lista->comeco = nodo;
-    nodo->anterior = NULL;
+    No* paraRemover = editor->atual;
 
-    atualizarPosicoes(lista);
-  } else if (posicao > lista->fim->posicao) { // inserção no fim
-    lista->fim->proximo = nodo;
-    nodo->anterior = lista->fim;
-    nodo->proximo = NULL;
-    lista->fim = nodo;
-  } else { // inserção no meio
-    Nodo *aux = lista->comeco->proximo;
-
-    while (aux != NULL && aux->posicao < posicao)
-    {
-      aux = aux->proximo;
-    }
-
-    nodo->proximo = aux;
-    nodo->anterior = aux->anterior;
-    aux->anterior->proximo = nodo;
-    aux->anterior = nodo;   
-
-    atualizarPosicoes(lista);
-  }
-}
-
-void atualizarPosicoes(Lista *lista) {
-  Nodo *aux = lista->comeco;
-
-  while (aux != NULL && aux->posicao + 1 == aux->proximo->posicao)
-  {
-    aux = aux->proximo;
-  }
-  aux = aux->proximo;
-
-  while (aux != NULL)
-  {
-    aux->posicao = aux->anterior->posicao + 1;
-    aux = aux->proximo;
-  }
-}
-
-int acharUltimoCaracter(Nodo *nodo) {  
-  for (int i = 0; i < TAM; i++) {
-    if (nodo->texto[i] == '\n') {
-      return i - 1;
-    }
-  }
-  return -1;
-}
-
-void moverCursor(Nodo **nodo, int *posicao, char tipo) {
-  if (tipo == 'e') {
-    if (!(*posicao == 0 && (*nodo)->anterior == NULL)) {
-      if (*posicao == 0) {
-        *nodo = (*nodo)->anterior;
-        *posicao = acharUltimoCaracter(*nodo);
-      } else {
-        (*posicao)--;
-      }
-    }
-  } else if (tipo == 'd') {
-    int ultimoCaracter = acharUltimoCaracter(*nodo);
-
-    if (!(*posicao == ultimoCaracter && (*nodo)->proximo == NULL)) {
-      if (*posicao == ultimoCaracter) {
-        *nodo = (*nodo)->proximo;
-        *posicao = 0;
-      } else {
-        (*posicao)++;
-      }
-    }
-  } else if (tipo == 'c') {
-    if (!((*nodo)->anterior == NULL)) {
-      *nodo = (*nodo)->anterior;
-      *posicao = acharUltimoCaracter(*nodo);
+    // Atualizar ponteiros
+    if (paraRemover->anterior != NULL) {
+        paraRemover->anterior->proximo = paraRemover->proximo;
     } else {
-      *posicao = 0;
+        // Deletando primeiro nó
+        editor->cabeca = paraRemover->proximo;
     }
-  } else if (tipo == 'b') {
-    if (!((*nodo)->proximo == NULL)) {
-      *nodo = (*nodo)->proximo;
+
+    if (paraRemover->proximo != NULL) {
+        paraRemover->proximo->anterior = paraRemover->anterior;
     }
-    *posicao = acharUltimoCaracter(*nodo);
-  }
+
+    // Atualizar linha atual
+    editor->atual = paraRemover->proximo ? paraRemover->proximo : paraRemover->anterior;
+
+    // Liberar memória
+    free(paraRemover);
 }
 
-void editar(Lista *lista) {
-  Nodo *aux = lista->fim;
-  int posicao = acharUltimoCaracter(aux);
+// Editar linha atual
+void editarLinha(EditorTexto* editor, const char* novoTexto) {
+    if (editor->atual == NULL) return;
 
-  while (1) {
-    system("cls");
-    mostrar(lista, aux, posicao);
+    strncpy(editor->atual->conteudo, novoTexto, TAMANHO_LINHA - 1);
+    editor->atual->conteudo[TAMANHO_LINHA - 1] = '\0';  // Garantir terminação
+}
 
-    int tecla = getch();
-        
-    if (tecla == 0 || tecla == 224) {
-      tecla = getch();
-
-      if (tecla == 72) { // tecla pra cima
-        moverCursor(&aux, &posicao, 'c');
-      } else if (tecla == 80) { // tecla pra baixo
-        moverCursor(&aux, &posicao, 'b');
-      } else if (tecla == 75) { // tecla pra esquerda
-        moverCursor(&aux, &posicao, 'e');
-      } else if (tecla == 77) { // tecla pra direita
-        moverCursor(&aux, &posicao, 'd');
-      }
-
-    } else if (tecla == 8) { //tecla backspace
-      printf("Backspace");
-    } else if (tecla == 13) { // tecla enter
-      printf("Enter");
-    } else if (tecla == 27) {
-      return;
-    } else {
-      printf("%c - %d", tecla, tecla);
+// Mover para linha acima
+void moverCima(EditorTexto* editor) {
+    if (editor->atual && editor->atual->anterior) {
+        editor->atual = editor->atual->anterior;
     }
-  }
-  system("cls");
+}
+
+// Mover para linha abaixo
+void moverBaixo(EditorTexto* editor) {
+    if (editor->atual && editor->atual->proximo) {
+        editor->atual = editor->atual->proximo;
+    }
+}
+
+// Imprimir documento
+void imprimirDocumento(EditorTexto* editor) {
+    No* atual = editor->cabeca;
+    int numeroLinha = 1;
+    
+    printf("--- Documento ---\n");
+    while (atual != NULL) {
+        printf("%d: %s\n", numeroLinha++, atual->conteudo);
+        atual = atual->proximo;
+    }
+    printf("----------------\n");
+}
+
+// Liberar memória do editor
+void liberarEditor(EditorTexto* editor) {
+    No* atual = editor->cabeca;
+    while (atual != NULL) {
+        No* temp = atual;
+        atual = atual->proximo;
+        free(temp);
+    }
+    free(editor);
+}
+
+// Função principal para demonstração
+int main() {
+    EditorTexto* editor = criarEditor();
+    int escolha;
+    char texto[TAMANHO_LINHA];
+
+    while (1) {
+        printf("\nEditor de Texto\n");
+        printf("1. Inserir linha\n");
+        printf("2. Deletar linha atual\n");
+        printf("3. Editar linha atual\n");
+        printf("4. Mover para cima\n");
+        printf("5. Mover para baixo\n");
+        printf("6. Imprimir documento\n");
+        printf("7. Sair\n");
+        printf("Escolha uma opção: ");
+        scanf("%d", &escolha);
+        getchar();  // Consumir newline
+
+        switch (escolha) {
+            case 1:
+                printf("Digite o texto (máx 30 caracteres): ");
+                fgets(texto, sizeof(texto), stdin);
+                texto[strcspn(texto, "\n")] = 0;  // Remover newline
+                inserirLinha(editor, texto);
+                break;
+            case 2:
+                deletarLinha(editor);
+                break;
+            case 3:
+                printf("Digite o novo texto (máx 30 caracteres): ");
+                fgets(texto, sizeof(texto), stdin);
+                texto[strcspn(texto, "\n")] = 0;  // Remover newline
+                editarLinha(editor, texto);
+                break;
+            case 4:
+                moverCima(editor);
+                break;
+            case 5:
+                moverBaixo(editor);
+                break;
+            case 6:
+                imprimirDocumento(editor);
+                break;
+            case 7:
+                liberarEditor(editor);
+                return 0;
+            default:
+                printf("Opção inválida!\n");
+        }
+    }
+
+    return 0;
 }
